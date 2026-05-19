@@ -1,13 +1,9 @@
-import type { QueryClient } from "@tanstack/react-query";
 import type { AppSocket } from "@/lib/socket/client";
 import { usePresenceStore } from "./store";
 
 type Unbind = () => void;
 
-export const bindPresenceSocket = (
-  socket: AppSocket,
-  _queryClient: QueryClient,
-): Unbind => {
+export const bindPresenceSocket = (socket: AppSocket): Unbind => {
   const onOnline = (p: { userId: string }) =>
     usePresenceStore.getState().setOnline(p.userId);
   const onOffline = (p: { userId: string; lastSeen: string }) =>

@@ -8,7 +8,7 @@ import {
   type CreateConversationRequest,
   conversationSchema,
 } from "@/schemas/conversation";
-import { type Message, messageSchema } from "@/schemas/message";
+import { messageSchema } from "@/schemas/message";
 
 const openResponseSchema = z.object({
   conversation: conversationSchema,

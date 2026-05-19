@@ -17,8 +17,8 @@ export const SocketProvider = ({ children }: { children: ReactNode }) => {
     const socket = initSocket(accessToken);
     const unbinds = [
       bindChatSocket(socket, queryClient),
-      bindCallSocket(socket, queryClient),
-      bindPresenceSocket(socket, queryClient),
+      bindCallSocket(socket),
+      bindPresenceSocket(socket),
     ];
     return () => {
       unbinds.forEach((fn) => fn());

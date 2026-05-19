@@ -1,11 +1,10 @@
-import type { QueryClient } from "@tanstack/react-query";
 import type { AppSocket } from "@/lib/socket/client";
 import type { CallStatus, CallType } from "@/schemas/call";
 import { useCallStore } from "./store";
 
 type Unbind = () => void;
 
-export const bindCallSocket = (socket: AppSocket, _queryClient: QueryClient): Unbind => {
+export const bindCallSocket = (socket: AppSocket): Unbind => {
   const onIncoming = (p: {
     callId: string;
     conversationId: string;
@@ -19,10 +18,8 @@ export const bindCallSocket = (socket: AppSocket, _queryClient: QueryClient): Un
       isIncoming: true,
     });
   };
-  const onAccept = (_p: { callId: string }) =>
-    useCallStore.getState().setStatus("ongoing");
-  const onReject = (_p: { callId: string }) =>
-    useCallStore.getState().setStatus("declined");
+  const onAccept = () => useCallStore.getState().setStatus("ongoing");
+  const onReject = () => useCallStore.getState().setStatus("declined");
   const onEnd = (p: { callId: string; status: CallStatus }) => {
     useCallStore.getState().setStatus(p.status);
     setTimeout(() => useCallStore.getState().end(), 800);

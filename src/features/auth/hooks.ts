@@ -4,19 +4,28 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "./store";
 
-export const useRequireAuth = (redirectTo = "/login"): boolean => {
+/**
+ * Redirects to `redirectTo` if not authenticated. Waits for Zustand persist
+ * rehydration to finish so we don't bounce logged-in users on page reload.
+ */
+export const useRequireAuth = (redirectTo = "/login"): { ready: boolean; isAuthed: boolean } => {
   const router = useRouter();
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const accessToken = useAuthStore((s) => s.accessToken);
+
   useEffect(() => {
-    if (!accessToken) router.replace(redirectTo);
-  }, [accessToken, router, redirectTo]);
-  return !!accessToken;
+    if (hasHydrated && !accessToken) router.replace(redirectTo);
+  }, [hasHydrated, accessToken, router, redirectTo]);
+
+  return { ready: hasHydrated, isAuthed: !!accessToken };
 };
 
 export const useRedirectIfAuthed = (redirectTo = "/chat"): void => {
   const router = useRouter();
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const accessToken = useAuthStore((s) => s.accessToken);
+
   useEffect(() => {
-    if (accessToken) router.replace(redirectTo);
-  }, [accessToken, router, redirectTo]);
+    if (hasHydrated && accessToken) router.replace(redirectTo);
+  }, [hasHydrated, accessToken, router, redirectTo]);
 };

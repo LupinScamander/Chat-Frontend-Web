@@ -34,3 +34,15 @@ export const verifyResponseSchema = z.object({
   user: userSchema.optional(),
 });
 export type VerifyResponse = z.infer<typeof verifyResponseSchema>;
+
+/**
+ * Form-only schema for the register UI. Adds confirmPassword (not sent to BE).
+ * Strip confirmPassword before calling authService.register / useRegister.
+ */
+export const registerFormSchema = registerRequestSchema
+  .extend({ confirmPassword: z.string() })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+export type RegisterForm = z.infer<typeof registerFormSchema>;

@@ -1,27 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useRequireAuth } from "@/features/auth/hooks";
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const router = useRouter();
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+export default function MainLayout({ children }: { children: React.ReactNode }) {
+  const { ready, isAuthed } = useRequireAuth("/login");
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login');
-    }
-  }, [isAuthenticated, router]);
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
+  if (!ready || !isAuthed) return null;
   return <>{children}</>;
 }

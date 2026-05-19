@@ -1,10 +1,9 @@
-'use client';
+"use client";
 
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useAuthStore } from "@/features/auth/store";
 
 export default function ProfilePage() {
-  const { user } = useSelector((state: RootState) => state.auth);
+  const user = useAuthStore((s) => s.user);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -16,25 +15,27 @@ export default function ProfilePage() {
             {user ? (
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
-                  <p className="mt-2 text-gray-900">{user.name}</p>
+                  <label className="block text-sm font-medium text-gray-700">Username</label>
+                  <p className="mt-2 text-gray-900">{user.username}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-2 text-gray-900">{user.email}</p>
+                  <p className="mt-2 text-gray-900">{user.email ?? "—"}</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Status</label>
                   <p className="mt-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                      user.status === 'online'
-                        ? 'bg-green-100 text-green-800'
-                        : user.status === 'away'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        user.status === "online"
+                          ? "bg-green-100 text-green-800"
+                          : user.status === "away"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
                       {user.status}
                     </span>
                   </p>

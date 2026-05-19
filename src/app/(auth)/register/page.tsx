@@ -1,111 +1,69 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { getPasswordStrength, isValidEmail } from '@/utils/helpers';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { registerFormSchema, type RegisterForm } from "@/schemas/auth";
+import { useRegister } from "@/features/auth/api";
+import { useRedirectIfAuthed } from "@/features/auth/hooks";
+import { toApiError } from "@/lib/http/errors";
+import { getPasswordStrength } from "@/utils/helpers";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, isLoading, error } = useAuth();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+  useRedirectIfAuthed("/chat");
+
+  const {
+    register: field,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<RegisterForm>({
+    resolver: zodResolver(registerFormSchema),
+    defaultValues: { username: "", email: "", password: "", confirmPassword: "" },
   });
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-    // Clear validation error for this field
-    if (validationErrors[name]) {
-      setValidationErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
-    }
-  };
+  const registerMutation = useRegister();
+  const apiError = registerMutation.error ? toApiError(registerMutation.error) : null;
 
-  const validateForm = () => {
-    const errors: Record<string, string> = {};
+  const password = watch("password");
+  const passwordStrength = password ? getPasswordStrength(password) : null;
 
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-    }
-
-    if (!isValidEmail(formData.email)) {
-      errors.email = 'Valid email is required';
-    }
-
-    if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters';
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      await register(formData);
-      router.push('/chat');
-    } catch (err) {
-      console.error('Register error:', err);
-    }
-  };
-
-  const passwordStrength = formData.password ? getPasswordStrength(formData.password) : null;
+  const onSubmit = handleSubmit((values) => {
+    registerMutation.mutate(
+      { username: values.username, email: values.email, password: values.password },
+      { onSuccess: () => router.push("/chat") },
+    );
+  });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Create your account
-          </h2>
-        </div>
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+          Create your account
+        </h2>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          {error && (
+        <form className="space-y-6" onSubmit={onSubmit} noValidate>
+          {apiError && (
             <div className="rounded-md bg-red-50 p-4">
-              <p className="text-sm font-medium text-red-800">
-                {error.message}
-              </p>
+              <p className="text-sm font-medium text-red-800">{apiError.message}</p>
             </div>
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-              Full Name
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+              Username
             </label>
             <input
-              id="name"
-              name="name"
+              id="username"
               type="text"
-              autoComplete="name"
-              required
-              value={formData.name}
-              onChange={handleChange}
+              autoComplete="username"
+              {...field("username")}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
             />
-            {validationErrors.name && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.name}</p>
+            {errors.username && (
+              <p className="mt-1 text-sm text-red-600">{errors.username.message}</p>
             )}
           </div>
 
@@ -115,16 +73,13 @@ export default function RegisterPage() {
             </label>
             <input
               id="email"
-              name="email"
               type="email"
               autoComplete="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
+              {...field("email")}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
             />
-            {validationErrors.email && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
             )}
           </div>
 
@@ -134,26 +89,26 @@ export default function RegisterPage() {
             </label>
             <input
               id="password"
-              name="password"
               type="password"
-              required
-              value={formData.password}
-              onChange={handleChange}
+              autoComplete="new-password"
+              {...field("password")}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
             />
             {passwordStrength && (
-              <p className={`mt-1 text-sm ${
-                passwordStrength === 'strong'
-                  ? 'text-green-600'
-                  : passwordStrength === 'medium'
-                  ? 'text-yellow-600'
-                  : 'text-red-600'
-              }`}>
+              <p
+                className={`mt-1 text-sm ${
+                  passwordStrength === "strong"
+                    ? "text-green-600"
+                    : passwordStrength === "medium"
+                    ? "text-yellow-600"
+                    : "text-red-600"
+                }`}
+              >
                 Password strength: {passwordStrength}
               </p>
             )}
-            {validationErrors.password && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
             )}
           </div>
 
@@ -163,33 +118,28 @@ export default function RegisterPage() {
             </label>
             <input
               id="confirmPassword"
-              name="confirmPassword"
               type="password"
-              required
-              value={formData.confirmPassword}
-              onChange={handleChange}
+              autoComplete="new-password"
+              {...field("confirmPassword")}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
             />
-            {validationErrors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
+            {errors.confirmPassword && (
+              <p className="mt-1 text-sm text-red-600">{errors.confirmPassword.message}</p>
             )}
           </div>
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={registerMutation.isPending}
             className="w-full flex justify-center py-2 px-4 rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Creating account...' : 'Sign up'}
+            {registerMutation.isPending ? "Creating account..." : "Sign up"}
           </button>
         </form>
 
         <p className="text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link
-            href="/login"
-            className="font-medium text-blue-600 hover:text-blue-500"
-          >
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
             Sign in
           </Link>
         </p>
