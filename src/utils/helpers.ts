@@ -1,7 +1,7 @@
 /**
  * Format date to readable string
  */
-export const formatDate = (date: string | Date, format?: string): string => {
+export const formatDate = (date: string | Date): string => {
   const d = new Date(date);
   const now = new Date();
 
@@ -99,11 +99,11 @@ export const getPasswordStrength = (password: string): "weak" | "medium" | "stro
 /**
  * Debounce function
  */
-export const debounce = <T extends (...args: any[]) => any>(
+export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
-  wait: number
+  wait: number,
 ): ((...args: Parameters<T>) => void) => {
-  let timeout: NodeJS.Timeout;
+  let timeout: ReturnType<typeof setTimeout>;
 
   return (...args: Parameters<T>) => {
     clearTimeout(timeout);

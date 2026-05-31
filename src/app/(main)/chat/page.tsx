@@ -1,77 +1,68 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { useChat } from '@/hooks/useChat';
+import { useEffect, useMemo } from "react";
+import { useAuthStore } from "@/features/auth/store";
+import { useConversations, useMarkRead } from "@/features/chat/api";
+import { useChatStore } from "@/features/chat/store";
+import { getConversationTitle } from "@/features/chat/helpers";
+import { ConversationList } from "@/features/chat/components/ConversationList";
+import { MessageList } from "@/features/chat/components/MessageList";
+import { MessageInput } from "@/features/chat/components/MessageInput";
+import { TypingIndicator } from "@/features/chat/components/TypingIndicator";
+import { CallButton } from "@/features/call/components/CallButton";
 
 export default function ChatPage() {
-  const { conversations, activeConversation, isLoading, loadConversations } = useChat();
+  const me = useAuthStore((s) => s.user);
+  const activeId = useChatStore((s) => s.activeConversationId);
+  const { data: conversations } = useConversations();
+  const markRead = useMarkRead(activeId ?? "");
 
+  const activeConversation = useMemo(
+    () => conversations?.find((c) => c.id === activeId),
+    [conversations, activeId],
+  );
+
+  // Mark conversation as read when it becomes active.
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    if (activeId) markRead.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
 
   return (
     <div className="flex h-screen bg-white">
-      {/* Sidebar */}
-      <div className="w-full sm:w-64 border-r border-gray-200 bg-gray-50">
+      <aside className="w-full sm:w-72 border-r border-gray-200 bg-gray-50 flex flex-col">
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-xl font-bold text-gray-900">Messages</h1>
         </div>
-
         <div className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="p-4 text-center text-gray-500">Loading...</div>
-          ) : conversations.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">No conversations</div>
-          ) : (
-            conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className={`p-4 border-b border-gray-200 cursor-pointer hover:bg-gray-100 ${
-                  activeConversation?.id === conversation.id ? 'bg-blue-50' : ''
-                }`}
-              >
-                <p className="font-medium text-gray-900">
-                  {conversation.name || conversation.participants[0]?.name}
-                </p>
-                {conversation.lastMessage && (
-                  <p className="text-sm text-gray-500 truncate">
-                    {conversation.lastMessage.content}
-                  </p>
-                )}
-              </div>
-            ))
-          )}
+          <ConversationList />
         </div>
-      </div>
+      </aside>
 
-      {/* Main Chat Area */}
-      <div className="hidden sm:flex flex-1 flex-col">
+      <section className="hidden sm:flex flex-1 flex-col">
         {activeConversation ? (
           <>
-            <div className="border-b border-gray-200 p-4">
+            <header className="border-b border-gray-200 p-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">
-                {activeConversation.name || activeConversation.participants[0]?.name}
+                {getConversationTitle(activeConversation, me?.id)}
               </h2>
+              <div className="flex gap-2">
+                <CallButton conversationId={activeConversation.id} type="audio" />
+                <CallButton conversationId={activeConversation.id} type="video" />
+              </div>
+            </header>
+            <div className="flex-1 overflow-y-auto">
+              <MessageList conversationId={activeConversation.id} />
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              {/* Messages will be displayed here */}
-              <p className="text-center text-gray-500">No messages yet</p>
-            </div>
-            <div className="border-t border-gray-200 p-4">
-              <input
-                type="text"
-                placeholder="Type a message..."
-                className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            <TypingIndicator conversationId={activeConversation.id} />
+            <MessageInput conversationId={activeConversation.id} />
           </>
         ) : (
           <div className="flex items-center justify-center flex-1">
             <p className="text-gray-500">Select a conversation to start messaging</p>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

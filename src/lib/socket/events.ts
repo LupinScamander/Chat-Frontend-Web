@@ -46,7 +46,13 @@ export interface ClientToServerEvents {
 
 export interface ServerToClientEvents {
   receive_message: (msg: Message) => void;
-  message_queued: (payload: { clientMessageId: string; messageId: string; seq: number }) => void;
+  message_queued: (payload: {
+    clientMessageId: string;
+    messageId: string;
+    seq: number;
+    /** May be omitted by older servers — sender tracks conversationId locally via sendQueue. */
+    conversationId?: string;
+  }) => void;
   message_delivered: (payload: { messageId: string; userId: string }) => void;
   read_receipt: (payload: { conversationId: string; userId: string; lastReadSeq: number }) => void;
   typing: (payload: { conversationId: string; userId: string; isTyping: boolean }) => void;
